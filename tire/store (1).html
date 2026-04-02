@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>My Store</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  /* =============================================
+     EASY EDIT ZONE — change colors & fonts here
+  ============================================= */
+  :root {
+    --bg:        #f5f0eb;
+    --card:      #ffffff;
+    --accent:    #c8773a;
+    --accent2:   #2d6a4f;
+    --text:      #1a1a1a;
+    --muted:     #7a7060;
+    --border:    #e5ddd3;
+    --radius:    14px;
+    --font-head: 'Playfair Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ---- HEADER ---- */
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 22px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+  }
+  .logo { font-family: var(--font-head); font-size: 1.7rem; color: var(--accent); letter-spacing: -.5px; }
+  .logo span { color: var(--text); }
+  .tagline { font-size: .82rem; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+
+  /* ---- HERO ---- */
+  .hero { text-align: center; padding: 64px 20px 48px; }
+  .hero h1 { font-family: var(--font-head); font-size: clamp(2rem,5vw,3.2rem); line-height: 1.15; margin-bottom: 14px; }
+  .hero p { color: var(--muted); font-size: 1.05rem; max-width: 460px; margin: 0 auto; }
+  .divider { width: 60px; height: 3px; background: var(--accent); margin: 20px auto 0; border-radius: 2px; }
+
+  /* ---- PRODUCTS GRID ---- */
+  .products-section { padding: 0 24px 64px; }
+  .section-title { font-family: var(--font-head); font-size: 1.5rem; margin-bottom: 28px; text-align: center; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 24px; max-width: 1100px; margin: 0 auto;
+  }
+  .card {
+    background: var(--card); border-radius: var(--radius); border: 1px solid var(--border);
+    overflow: hidden; transition: transform .22s ease, box-shadow .22s ease;
+    display: flex; flex-direction: column; cursor: pointer;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,.1); }
+  .card-img-wrap {
+    width: 100%; aspect-ratio: 4/3; overflow: hidden; background: #f0ebe3;
+    display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform .35s ease; }
+  .card:hover .card-img-wrap img { transform: scale(1.05); }
+  .view-hint {
+    position: absolute; bottom: 8px; right: 8px;
+    background: rgba(0,0,0,.45); color: #fff;
+    font-size: .72rem; padding: 4px 10px; border-radius: 20px;
+    opacity: 0; transition: opacity .2s; pointer-events: none;
+  }
+  .card:hover .view-hint { opacity: 1; }
+  .card-body { padding: 18px; flex: 1; display: flex; flex-direction: column; }
+  .card-name { font-family: var(--font-head); font-size: 1.1rem; margin-bottom: 6px; }
+  .card-desc { font-size: .85rem; color: var(--muted); line-height: 1.5; flex: 1; margin-bottom: 14px; }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .price { font-size: 1.25rem; font-weight: 600; color: var(--accent); }
+  .price small { font-size: .7rem; color: var(--muted); font-weight: 400; margin-left: 2px; }
+  .btn-wa {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent2); color: #fff; border: none; border-radius: 8px;
+    padding: 9px 14px; font-size: .82rem; font-family: var(--font-body); font-weight: 500;
+    cursor: pointer; text-decoration: none; transition: background .18s, transform .15s; white-space: nowrap;
+  }
+  .btn-wa:hover { background: #1e5c3f; transform: scale(1.03); }
+  .btn-wa svg { width: 16px; height: 16px; fill: #fff; flex-shrink: 0; }
+
+  /* ================================================
+     PRODUCT DETAIL MODAL
+  ================================================ */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(15,12,8,.6);
+    backdrop-filter: blur(5px);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .28s ease;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--card); border-radius: 20px;
+    width: 100%; max-width: 800px; max-height: 92vh; overflow-y: auto;
+    display: grid; grid-template-columns: 1fr 1fr;
+    box-shadow: 0 32px 80px rgba(0,0,0,.28);
+    transform: translateY(32px) scale(.97);
+    transition: transform .32s cubic-bezier(.22,1,.36,1);
+    position: relative;
+  }
+  .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+
+  /* Close X */
+  .modal-x {
+    position: absolute; top: 14px; right: 14px; z-index: 5;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--bg); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; color: var(--muted); cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .modal-x:hover { background: var(--text); color: #fff; }
+
+  .modal-img { border-radius: 20px 0 0 20px; overflow: hidden; background: #f0ebe3; }
+  .modal-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .modal-body { padding: 36px 30px; display: flex; flex-direction: column; }
+
+  .modal-badge {
+    display: inline-block; align-self: flex-start;
+    background: #fff4ec; color: var(--accent);
+    font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    padding: 4px 12px; border-radius: 20px; margin-bottom: 14px;
+  }
+  .modal-title { font-family: var(--font-head); font-size: 1.65rem; line-height: 1.2; margin-bottom: 10px; }
+  .modal-price { font-size: 1.55rem; font-weight: 700; color: var(--accent); margin-bottom: 16px; }
+  .modal-price small { font-size: .85rem; color: var(--muted); font-weight: 400; }
+
+  .modal-sep { height: 1px; background: var(--border); margin-bottom: 16px; }
+
+  .modal-longdesc { font-size: .95rem; line-height: 1.75; color: #444; margin-bottom: 20px; flex: 1; }
+
+  .modal-specs { list-style: none; margin-bottom: 24px; }
+  .modal-specs li {
+    display: flex; gap: 10px; font-size: .87rem;
+    padding: 7px 0; border-bottom: 1px solid var(--border);
+  }
+  .modal-specs li:last-child { border-bottom: none; }
+  .modal-specs li strong { color: var(--text); min-width: 80px; flex-shrink: 0; }
+  .modal-specs li span { color: var(--muted); }
+
+  .modal-actions { display: flex; flex-direction: column; gap: 10px; }
+
+  .btn-wa-lg {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--accent2); color: #fff; border: none; border-radius: 10px;
+    padding: 14px 20px; font-size: .95rem; font-family: var(--font-body); font-weight: 500;
+    cursor: pointer; transition: background .18s, transform .15s;
+  }
+  .btn-wa-lg:hover { background: #1e5c3f; transform: scale(1.02); }
+  .btn-wa-lg svg { width: 20px; height: 20px; fill: #fff; flex-shrink: 0; }
+
+  .btn-back {
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; color: var(--muted); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 11px 20px;
+    font-size: .88rem; font-family: var(--font-body); font-weight: 500;
+    cursor: pointer; transition: border-color .18s, color .18s;
+  }
+  .btn-back:hover { border-color: var(--text); color: var(--text); }
+
+  /* Mobile */
+  @media (max-width: 620px) {
+    .modal { grid-template-columns: 1fr; }
+    .modal-img { border-radius: 20px 20px 0 0; aspect-ratio: 16/9; }
+    .modal-img img { height: 100%; }
+    .modal-body { padding: 22px 18px; }
+    .modal-title { font-size: 1.3rem; }
+  }
+
+  /* ---- ORDER FORM ---- */
+  .form-section { background: var(--card); border-top: 1px solid var(--border); padding: 60px 24px; }
+  .form-wrap { max-width: 520px; margin: 0 auto; }
+  .form-wrap h2 { font-family: var(--font-head); font-size: 1.8rem; margin-bottom: 8px; }
+  .form-wrap p { color: var(--muted); font-size: .92rem; margin-bottom: 28px; }
+  .form-group { margin-bottom: 18px; }
+  label { display: block; font-size: .82rem; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  input, textarea {
+    width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 9px;
+    font-family: var(--font-body); font-size: .95rem; background: var(--bg); color: var(--text);
+    transition: border-color .18s; outline: none; resize: vertical;
+  }
+  input:focus, textarea:focus { border-color: var(--accent); }
+  .btn-submit {
+    width: 100%; padding: 14px; background: var(--accent); color: #fff; border: none; border-radius: 9px;
+    font-family: var(--font-body); font-size: 1rem; font-weight: 500; cursor: pointer;
+    transition: background .18s, transform .15s; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-submit:hover { background: #a85e28; transform: scale(1.01); }
+  .btn-submit svg { width: 20px; height: 20px; fill: #fff; }
+
+  footer { text-align: center; padding: 28px; font-size: .82rem; color: var(--muted); border-top: 1px solid var(--border); }
+
+  .toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #1a1a1a; color: #fff; padding: 12px 22px; border-radius: 30px;
+    font-size: .9rem; opacity: 0; transition: all .35s ease; pointer-events: none; z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 500px) {
+    header { padding: 16px 20px; }
+    .hero { padding: 40px 16px 32px; }
+    .card-footer { flex-direction: column; align-items: flex-start; }
+    .btn-wa { width: 100%; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">de<span>coreOBA</span></div>
+  <div class="tagline">Quality · Fast Delivery</div>
+</header>
+
+<section class="hero">
+  <h1>Shop the Best<br>Products Online</h1>
+  <p>Browse our collection and order directly via WhatsApp — fast, easy, and personal.</p>
+  <div class="divider"></div>
+</section>
+
+<section class="products-section">
+  <h2 class="section-title">Our Products</h2>
+  <div class="grid" id="products-grid"></div>
+</section>
+
+<section class="form-section">
+  <div class="form-wrap">
+    <h2>Send Your Order</h2>
+    <p>Fill in your details and send your order directly to us on WhatsApp.</p>
+    <div class="form-group">
+      <label for="fname">Full Name</label>
+      <input type="text" id="fname" placeholder="e.g. Ahmed Benali" />
+    </div>
+    <div class="form-group">
+      <label for="fphone">Phone Number</label>
+      <input type="tel" id="fphone" placeholder="+212 6XX XXX XXX" />
+    </div>
+    <div class="form-group">
+      <label for="faddress">Delivery Address</label>
+      <textarea id="faddress" rows="3" placeholder="City, neighbourhood, street..."></textarea>
+    </div>
+    <div class="form-group">
+      <label for="fnote">Note (optional)</label>
+      <textarea id="fnote" rows="2" placeholder="Any special requests?"></textarea>
+    </div>
+    <button class="btn-submit" onclick="sendFormOrder()">
+      <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Send Order on WhatsApp
+    </button>
+  </div>
+</section>
+
+<footer>&copy; 2025 MyStore · All rights reserved</footer>
+<div class="toast" id="toast"></div>
+
+<!-- ===== PRODUCT DETAIL MODAL ===== -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal">
+    <button class="modal-x" onclick="closeModal()">✕</button>
+    <div class="modal-img">
+      <img id="modal-img" src="" alt="" />
+    </div>
+    <div class="modal-body">
+      <span class="modal-badge" id="modal-badge"></span>
+      <div class="modal-title" id="modal-title"></div>
+      <div class="modal-price" id="modal-price"></div>
+      <div class="modal-sep"></div>
+      <div class="modal-longdesc" id="modal-longdesc"></div>
+      <ul class="modal-specs" id="modal-specs"></ul>
+      <div class="modal-actions">
+        <button class="btn-wa-lg" id="modal-wa-btn">
+          <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Order on WhatsApp
+        </button>
+        <button class="btn-back" onclick="closeModal()">← Back to store</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================================================
+   ✏️  CONFIG
+================================================ */
+const CONFIG = {
+  whatsappNumber: "212654454146",   // ← your number (no + sign)
+  storeName:      "DecoreOBA",
+  currency:       "MAD",
+};
+
+/* ================================================
+   ✏️  PRODUCTS
+   - description  : short text shown on the card
+   - longDesc     : full paragraph shown in the modal
+   - details      : spec rows shown in the modal [{label, value}]
+   - badge        : category label shown in modal
+================================================ */
+const PRODUCTS = [
+  {
+    name:        "لوحات فنية تجريدي ثناية",
+    price:       349,
+    description: "Premium sound quality with 30-hour battery life.",
+    longDesc:    "Experience music the way it was meant to be heard. These over-ear headphones deliver rich, deep bass and crystal-clear highs through 40mm drivers. Active noise cancellation blocks out the world so you can focus on what matters.",
+    image:       "aa.jpg",
+    badge:       "🎧 Audio",
+    details: [
+      { label: "Battery",   value: "30 hours playback" },
+      { label: "Bluetooth", value: "5.2 — 10 m range" },
+      { label: "Weight",    value: "250 g" },
+      { label: "Colors",    value: "Black, White, Red" },
+    ],
+  },
+  {
+    name:        "لوحات فنية تجريدي ثناية",
+    price:       129,
+    description: "Slim genuine leather wallet, fits 8 cards + cash.",
+    longDesc:    "Handcrafted from full-grain vegetable-tanned leather that develops a beautiful patina over time. Ultra-slim profile keeps your pocket comfortable while holding everything you need — cards, cash, and more.",
+    image:       "sss.jfif",
+    badge:       "👜 Accessories",
+    details: [
+      { label: "Material",  value: "Full-grain leather" },
+      { label: "Size",      value: "11 × 9 cm" },
+      { label: "Colors",    value: "Brown, Black, Tan" },
+    ],
+  },
+  {
+    name:        "لوحات فنية تجريدي ثناية",
+    price:       599,
+    description: "Track fitness, notifications, and sleep. Water-resistant.",
+    longDesc:    "Your health companion on your wrist. Tracks heart rate, steps, sleep quality, and SpO2 continuously. Receive calls and messages without taking out your phone. Swim-proof up to 50 metres.",
+    image:       "bbb.jpg",
+    badge:       "⌚ Wearables",
+    details: [
+      { label: "Material",  value: "Full-grain leather" },
+      { label: "Size",      value: "11 × 9 cm" },
+      { label: "Colors",    value: "Brown, Black, Tan" },
+    ],
+  },
+  {
+    name:        "لوحات فنية تجريدي ثناية",
+    price:       199,
+    description: "UV400 polarised lenses in a classic aviator frame.",
+    longDesc:    "Timeless aviator style with modern optical technology. Polarised lenses eliminate glare from water, roads, and snow. Lightweight metal frame sits comfortably all day. Suitable for driving, beach, and everyday wear.",
+    image:       "qq.jpg",
+    badge:       "😎 Eyewear",
+    details: [
+      { label: "Material",  value: "Full-grain leather" },
+      { label: "Size",      value: "11 × 9 cm" },
+      { label: "Colors",    value: "Brown, Black, Tan" },
+    ],
+  },
+  {
+    name:        "لوحات فنية تجريدي ثناية",
+    price:       279,
+    description: "15\" laptop compartment, 30 L, water-resistant canvas.",
+    longDesc:    "Built for commuters and weekend adventurers alike. Heavy-duty waxed canvas exterior sheds light rain effortlessly. Padded laptop sleeve, organiser pockets, and a hidden back-zipper pocket keep you organised and secure.",
+    image:       "images.jfif",
+    badge:       "🎒 Bags",
+    details: [
+      { label: "Material",  value: "Full-grain leather" },
+      { label: "Size",      value: "11 × 9 cm" },
+      { label: "Colors",    value: "Brown, Black, Tan" },
+    ],
+  },
+];
+/* ================ END EDITABLE CONFIG ================ */
+
+const WA_SVG = `<svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#fff;flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+
+// Render product cards
+function renderProducts() {
+  document.getElementById("products-grid").innerHTML = PRODUCTS.map((p, i) => `
+    <div class="card" onclick="openModal(${i})">
+      <div class="card-img-wrap">
+        <img src="${p.image}" alt="${p.name}" loading="lazy" />
+        <span class="view-hint">👁 View details</span>
+      </div>
+      <div class="card-body">
+        <div class="card-name">${p.name}</div>
+        <div class="card-desc">${p.description}</div>
+        <div class="card-footer">
+          <div class="price">${p.price.toLocaleString()} <small>${CONFIG.currency}</small></div>
+          <button class="btn-wa" onclick="event.stopPropagation(); orderProduct(${i})">
+            ${WA_SVG} Order
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join("");
+}
+
+// Open modal
+function openModal(i) {
+  const p = PRODUCTS[i];
+  document.getElementById("modal-img").src   = p.image;
+  document.getElementById("modal-img").alt   = p.name;
+  document.getElementById("modal-badge").textContent = p.badge || "Product";
+  document.getElementById("modal-title").textContent = p.name;
+  document.getElementById("modal-price").innerHTML =
+    `${p.price.toLocaleString()} <small>${CONFIG.currency}</small>`;
+  document.getElementById("modal-longdesc").textContent = p.longDesc || p.description;
+  document.getElementById("modal-specs").innerHTML =
+    (p.details || []).map(d =>
+      `<li><strong>${d.label}</strong><span>${d.value}</span></li>`
+    ).join("");
+  document.getElementById("modal-wa-btn").onclick = () => { closeModal(); orderProduct(i); };
+  document.getElementById("modal-overlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeModal() {
+  document.getElementById("modal-overlay").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById("modal-overlay")) closeModal();
+}
+
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+// WhatsApp helpers
+function orderProduct(i) {
+  const p = PRODUCTS[i];
+  openWhatsApp(
+    `🛍️ *New Order — ${CONFIG.storeName}*\n\n` +
+    `📦 *Product:* ${p.name}\n` +
+    `💰 *Price:* ${p.price.toLocaleString()} ${CONFIG.currency}\n\n` +
+    `Please confirm availability and delivery details. Thank you!`
+  );
+}
+
+function sendFormOrder() {
+  const name    = document.getElementById("fname").value.trim();
+  const phone   = document.getElementById("fphone").value.trim();
+  const address = document.getElementById("faddress").value.trim();
+  const note    = document.getElementById("fnote").value.trim();
+  if (!name || !phone || !address) { showToast("⚠️ Please fill in name, phone, and address."); return; }
+  openWhatsApp(
+    `🛍️ *New Order — ${CONFIG.storeName}*\n\n` +
+    `👤 *Name:* ${name}\n📞 *Phone:* ${phone}\n📍 *Address:* ${address}\n` +
+    (note ? `📝 *Note:* ${note}\n` : "") +
+    `\nPlease confirm my order. Thank you!`
+  );
+}
+
+function openWhatsApp(msg) {
+  window.open(`https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`, "_blank");
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 3000);
+}
+
+renderProducts();
+</script>
+</body>
+</html>
